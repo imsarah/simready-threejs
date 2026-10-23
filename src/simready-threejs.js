@@ -47,10 +47,19 @@ export const ASSETS = {
   'ppe_gloves_cloth_a01': { name: 'PPE gloves', sortOrder: 6, size: { x: 0.233, y: 0.053, z: 0.252 }, triangles: 202266, bytes: 1329376 },
 };
 
-/** Absolute URL for one asset by id, or pass a full URL/path through untouched. */
+/**
+ * Absolute URL for one asset.
+ *
+ *   'cart_mobile_e01'                    → base + assets/cart_mobile_e01.glb
+ *   'assets/cart_mobile_e01.glb'         → base + assets/cart_mobile_e01.glb
+ *   './assets/cart_mobile_e01.glb'       → left alone (explicit path)
+ *   'https://elsewhere/x.glb'            → left alone (absolute URL)
+ */
 export function assetUrl(id) {
-  if (/^(?:https?:)?\//.test(id) || id.endsWith('.glb')) return id;
-  return base + 'assets/' + id + '.glb';
+  if (/^[a-z][a-z0-9+.-]*:/i.test(id)) return id;            // absolute URL
+  if (id.startsWith('.') || id.startsWith('/')) return id;   // explicit path
+  const bare = id.replace(/^assets\//, '').replace(/\.glb$/i, '');
+  return base + 'assets/' + bare + '.glb';
 }
 
 /**
