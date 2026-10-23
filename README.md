@@ -5,7 +5,7 @@ USD assets. Everything you see is real geometry from the dataset — a 1.58 m
 mobile cart, a corrugated carton, a frying pan, produce, a cake slice and a pair
 of PPE gloves — converted to glTF and placed at true scale (1 unit = 1 metre).
 
-**Live demo:** https://instant-topaz-lcjcery.tmp.now (temporary deployment — expires 60 min after creation; claim it to keep it)
+**Live demo:** https://imsarah.github.io/simready-storeroom/
 
 ![Storeroom scene](docs/storeroom.png)
 
@@ -38,6 +38,18 @@ tools/fetch_assets.py   download an asset folder from Hugging Face
 tools/convert_simready.py   USD -> GLB converter (usd-core + pygltflib)
 tools/build_assets.sh   fetch -> convert -> compress pipeline
 ```
+
+## Deploy
+
+The site is pure static files — no build, no bundler, no server code — so it's
+hosted on **GitHub Pages** straight from `main`:
+
+```bash
+gh api -X POST /repos/<owner>/<repo>/pages -f "source[branch]=main" -f "source[path]=/"
+```
+
+`vercel.json` is included if you prefer Vercel (`vercel deploy`); it only adds
+long-lived cache headers for `assets/`.
 
 ## Run locally
 
