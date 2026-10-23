@@ -5,7 +5,7 @@ USD assets. Everything you see is real geometry from the dataset — a 1.58 m
 mobile cart, a corrugated carton, a frying pan, produce, a cake slice and a pair
 of PPE gloves — converted to glTF and placed at true scale (1 unit = 1 metre).
 
-**Live demo:** _add the Vercel URL here_
+**Live demo:** https://instant-topaz-lcjcery.tmp.now (temporary deployment — expires 60 min after creation; claim it to keep it)
 
 ![Storeroom scene](docs/storeroom.png)
 
