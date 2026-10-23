@@ -1,96 +1,124 @@
-# SimReady Storeroom
+# simready-threejs
 
-A real-time **three.js** room built from [NVIDIA SimReady](https://huggingface.co/datasets/nvidia/simready-assets)
-USD assets. Everything you see is real geometry from the dataset — a 1.58 m
-mobile cart, a corrugated carton, a frying pan, produce, a cake slice and a pair
-of PPE gloves — converted to glTF and placed at true scale (1 unit = 1 metre).
+**NVIDIA SimReady assets that load in three.js.** True metric scale (1 unit = 1 m),
+meshopt-compressed geometry, WebP textures — seven assets, 3.4 MB total.
 
-**Live demo:** https://imsarah.github.io/simready-storeroom/
+SimReady ships as layered USD, which no browser can read. These are converted:
+`UsdPreviewSurface` networks become glTF PBR materials, native-instance prototypes
+are baked into real geometry, and the whole set is compressed for the web.
 
-![Storeroom scene](docs/storeroom.png)
+**Live demo & docs:** https://imsarah.github.io/simready-threejs/
 
-![Asset turntable](docs/gallery.png)
+```js
+import { createLoader, loadAsset } from 'https://cdn.jsdelivr.net/gh/imsarah/simready-threejs@main/src/simready-threejs.js'
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js'
 
-| Storeroom scene | Asset turntable |
+const loader = createLoader({ loaderClass: GLTFLoader, meshoptDecoder: MeshoptDecoder })
+const { object, meta } = await loadAsset('cart_mobile_e01', { loader, THREE, floor: true })
+
+scene.add(object)
+meta.measured.size // → { x: 0.401, y: 1.579, z: 0.838 } metres
+```
+
+No library needed if you already have a loader — every file is a plain GLB:
+
+```js
+loader.load('https://cdn.jsdelivr.net/gh/imsarah/simready-threejs@main/assets/box_corrugated_brown_b08.glb',
+  (gltf) => scene.add(gltf.scene))
+```
+
+## What's in the box
+
+| Asset | Size (m) | Triangles | GLB |
+| --- | --- | --- | --- |
+| `cart_mobile_e01` | 0.401 × 1.579 × 0.838 | 298,146 | 1.16 MB |
+| `box_corrugated_brown_b08` | 0.297 × 0.304 × 0.304 | 15,999 | 367 KB |
+| `kitchenware_pan_n01` | 0.204 × 0.053 × 0.360 | 15,392 | 171 KB |
+| `food_prepared_cake_a01` | 0.086 × 0.070 × 0.104 | 6,990 | 211 KB |
+| `food_produce_banana_m01` | 0.090 × 0.028 × 0.148 | 7,148 | 89 KB |
+| `food_produce_tomato_a01` | 0.065 × 0.057 × 0.062 | 9,996 | 86 KB |
+| `ppe_gloves_cloth_a01` | 0.233 × 0.053 × 0.252 | 202,266 | 1.30 MB |
+
+Sizes are measured from the loaded geometry, not copied from docs.
+`manifest.json` carries the same numbers plus source links and attribution.
+
+Files are encoded with `EXT_meshopt_compression` (needs `MeshoptDecoder`) and
+`EXT_texture_webp` (WebP, 1024 px max). Y-up, metres, no physics colliders.
+
+## API
+
+| Export | What it does |
 | --- | --- |
-| `index.html` | `gallery.html` |
+| `createLoader({ loaderClass, meshoptDecoder })` | A `GLTFLoader` wired with the meshopt decoder these files require |
+| `loadAsset(id, { loader, THREE, floor, shadows })` | Load one asset → `{ object, meta }`, optionally snapped to the floor |
+| `loadAssets(ids, opts)` | Several at once, in order |
+| `assetUrl(id)` | Absolute URL for an asset id |
+| `setBase(url)` / `getBase()` | Switch resolution between the CDN (default) and same-origin (`setBase('./')`) |
+| `snapToFloor(object, THREE)` | Move an object so its lowest point sits at y = 0 |
+| `measure(object, THREE)` | Size and bounds in metres |
+| `metreReference(THREE)` | A 1 m wireframe cube for scale sanity checks |
+| `ASSETS` | The catalogue, inlined — no fetch needed |
 
-## Why this exists
+## Examples in this repo
 
-SimReady assets ship as layered USD: a thin entry stage payloads geometry from
-`payloads/`, with the actual meshes living inside **native instance prototypes**
-and textures referenced relative to the *authoring layer*, not the entry file.
-You cannot load a SimReady `.usd` in a browser, and naive converters drop the
-instances, the UV index streams or the textures.
+* `index.html` — docs page with a live real-scale viewer and the asset table
+* `storeroom.html` — a full storeroom interior built at 1:1 from these assets
+* `gallery.html` — turntable of the six small assets
 
-`tools/convert_simready.py` handles that: it walks the composed stage
-(prototypes included), bakes world transforms, converts Z-up metres to Y-up,
-resolves texture paths per layer, rebuilds `primvars:st` from
-`primvars:st:indices`, and writes one GLB with albedo / normal / ORM maps.
+## Where this came from
+
+The interesting work is `tools/convert_simready.py`, which handles the three
+things that break naive conversion of SimReady USD:
+
+1. **Geometry hides in native-instance prototypes** — a plain prim traversal finds
+   zero meshes; the meshes live under `__Prototype_*`, referenced by instances.
+   Blender's stock exporter mishandles this in the other direction: it emits the
+   prototypes *and* the instances, doubling triangle counts.
+2. **UVs are indexed** (`primvars:st:indices`) and must be expanded to per-corner
+   attributes, or textures come out scrambled.
+3. **Texture paths resolve per authoring layer** — relative to
+   `payloads/materials.usda`, not the entry stage.
+
+```bash
+python3 -m pip install usd-core numpy pygltflib pillow
+python3 tools/fetch_assets.py food_produce_banana_m01        # download from HF
+python3 tools/convert_simready.py data/…/*.usd -o out.glb    # USD → GLB
+npx @gltf-transform/cli optimize out.glb assets/x.glb \
+    --compress meshopt --texture-compress webp --texture-size 1024
+# or just: tools/build_assets.sh <asset> ...
+```
+
+## Is this good enough for my project?
+
+**Verified.** Eight assets converted correctly; one (eyeglasses, 82 MB of USD →
+384 KB) was checked blind against published ground truth and matched exactly —
+4 meshes, 42,168 triangles, 0.145 × 0.174 × 0.057 m.
+
+**Limitations — read before relying on it:**
+
+* **`UsdPreviewSurface` only.** MDL-only assets give wrong or missing textures,
+  *silently*. Always eyeball output.
+* **Default variant only.** SimReady physics variants (rigid/deformable) aren't
+  selectable yet.
+* **Props, not scenes.** Single assets up to ~300K triangles; assembly-level USD
+  with nested references is untested.
+* **No physics.** Colliders and mass stay in the SimReady USD.
+* **WebP textures.** Perfect for browsers; Unity/Godot/native want
+  `--texture-compress false` or PNG.
+* **No decimation.** Triangle counts match the source; add `--simplify` if needed.
 
 ## Layout
 
 ```
-index.html              storeroom scene (the hero)
+index.html              docs + live real-scale demo (the site)
+storeroom.html          example scene: a storeroom built at 1:1
 gallery.html            turntable of the six small assets
-assets/*.glb            converted, meshopt-compressed assets
-tools/fetch_assets.py   download an asset folder from Hugging Face
-tools/convert_simready.py   USD -> GLB converter (usd-core + pygltflib)
-tools/build_assets.sh   fetch -> convert -> compress pipeline
+src/simready-threejs.js the ESM module
+manifest.json           catalogue: sizes, triangles, source links, licence
+assets/*.glb            the converted assets
+tools/                  fetch → convert → compress pipeline
 ```
-
-## Deploy
-
-The site is pure static files — no build, no bundler, no server code — so it's
-hosted on **GitHub Pages** straight from `main`:
-
-```bash
-gh api -X POST /repos/<owner>/<repo>/pages -f "source[branch]=main" -f "source[path]=/"
-```
-
-`vercel.json` is included if you prefer Vercel (`vercel deploy`); it only adds
-long-lived cache headers for `assets/`.
-
-## Is this good enough for my project?
-
-It depends what you need it for. Honest scope:
-
-**Verified working.** Eight assets converted with geometry, UVs, albedo/normal/ORM
-textures and correct metre scale. One of them was checked against published
-ground truth: `accessory_eyeglasses_a01` should be 4 meshes / 42,168 triangles /
-0.145 x 0.174 x 0.057 m — this converter produces 4 meshes / 42,168 triangles /
-0.145 x 0.174 x 0.057 m. (Blender's stock exporter needs two corrections on that
-same asset or it emits exactly double the triangles, with doubled arms.)
-
-**What it handles.** Layered USD with `payloads/`, native-instance prototypes,
-per-layer texture paths, indexed `primvars:st`, Z-up to Y-up, and memory-safe
-texture downscaling. Source folders are large — the eyeglasses are 82 MB in USD
-and come out at 384 KB after meshopt + WebP.
-
-**What it does not handle — check before you rely on it:**
-
-* **UsdPreviewSurface only.** Assets authored with MDL-only materials will give
-  you geometry with wrong or missing textures. Failures here are *silent*, not
-  errors — always eyeball the output.
-* **Variants.** The default variant is taken. SimReady ships physics variants
-  (rigid/deformable) and sometimes visual variants; there is no `--variant` flag.
-* **One entry stage per folder.** It picks the first `*.usd` in
-  `simready_usd/`. Assets with several entry stages need the path passed explicitly.
-* **Props, not scenes.** Tested on single assets (food, kitchenware, a cart,
-  PPE, eyewear) up to 459 K triangles. Assembly-level USD with nested instances
-  or `references` to other asset folders is untested.
-* **No physics.** Colliders, mass, and articulation live in the SimReady physics
-  layers and are not exported — this is render geometry for the web.
-* **WebP textures** (from the `gltf-transform` step). Great for three.js and any
-  browser; Unity, Godot, and native engines want `--texture-compress false` or PNG.
-* **No decimation.** Triangle counts match the source. Add
-  `--simplify`/`simplify()` from gltf-transform if you need lighter meshes.
-
-**Verdict:** for a three.js developer wanting SimReady *props* in a web scene,
-this saves the several hours it takes to discover the four traps above. For
-anything with MDL-only materials, variant selection, or full assemblies, treat it
-as a starting point you will have to extend — and verify the output rather than
-trusting it.
 
 ## Run locally
 
@@ -101,32 +129,23 @@ python3 -m http.server 8000
 # open http://localhost:8000
 ```
 
-## Rebuild an asset
+## Deploy
+
+Pure static files — no build, no bundler, no server code — hosted on **GitHub
+Pages** straight from `main`:
 
 ```bash
-python3 -m pip install usd-core numpy pygltflib pillow
-python3 tools/fetch_assets.py kitchenware_pan_n01
-python3 tools/convert_simready.py data/kitchenware_pan_n01/simready_usd/*.usd \
-        -o build/kitchenware_pan_n01.glb
-npx @gltf-transform/cli optimize build/kitchenware_pan_n01.glb \
-        assets/kitchenware_pan_n01.glb --compress meshopt \
-        --texture-compress webp --texture-size 1024
+gh api -X POST /repos/<owner>/<repo>/pages -f "source[branch]=main" -f "source[path]=/"
 ```
 
-`tools/build_assets.sh <asset...>` does all of the above in one go.
+`vercel.json` is included if you prefer Vercel (`vercel deploy`); it only adds
+long-lived cache headers for `assets/`.
 
-## Scene notes
+## Licensing
 
-* WebGL2, ACES tone mapping, PCF soft shadows, `RoomEnvironment` IBL.
-* `MeshoptDecoder` decodes the compressed meshes; textures arrive as WebP
-  (both are standard glTF extensions).
-* Portrait phones get a wider FOV and a pulled-back camera automatically.
-* Hover any object to see what it is; drag to orbit, scroll to zoom.
-
-## Credits & licence
-
-* 3D assets: **NVIDIA SimReady** (`nvidia/simready-assets`) — CC BY 4.0,
-  see [LICENSE-assets.txt](LICENSE-assets.txt). Attribution to NVIDIA.
-* Code (HTML/JS/Python): MIT, see [LICENSE](LICENSE).
+* Assets: **CC BY 4.0** — NVIDIA SimReady, from
+  [`nvidia/simready-assets`](https://huggingface.co/datasets/nvidia/simready-assets).
+  Attribution required; see [LICENSE-assets.txt](LICENSE-assets.txt).
+* Code (`src/`, `tools/`, HTML): **MIT**, see [LICENSE](LICENSE).
 
 Not affiliated with or endorsed by NVIDIA.

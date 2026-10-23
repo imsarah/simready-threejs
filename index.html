@@ -2,40 +2,103 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>SimReady Storeroom — NVIDIA assets in situ</title>
-<meta name="description" content="A real-time three.js storeroom built from NVIDIA SimReady USD assets converted to glTF.">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>simready-threejs — SimReady assets for three.js</title>
+<meta name="description" content="NVIDIA SimReady USD assets converted to web-ready glTF for three.js: metric scale, meshopt geometry, WebP textures, 3.4 MB total.">
 <style>
-  :root { color-scheme: dark; }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; overflow: hidden; background: #0a0b0e;
-    font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-  canvas { display: block; cursor: grab; }
-  #hud { position: fixed; inset: 0; pointer-events: none; color: #e8ecf3; }
-  .panel { position: absolute; pointer-events: auto; backdrop-filter: blur(14px) saturate(140%);
-    background: rgba(14,16,21,.66); border: 1px solid rgba(255,255,255,.09);
-    border-radius: 14px; box-shadow: 0 18px 50px rgba(0,0,0,.5); }
-  #title { top: 18px; left: 18px; padding: 13px 17px; }
-  #title h1 { margin: 0 0 5px; font-size: 13.5px; letter-spacing: .16em; text-transform: uppercase; font-weight: 600; }
-  #title p { margin: 0; font-size: 11px; line-height: 1.55; color: #98a2b4; }
-  #title b { color: #d3dcea; font-weight: 600; }
-  #title a { color: #9cc8ff; text-decoration: none; }
-  #title a:hover { text-decoration: underline; }
-  #controls { bottom: 18px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; padding: 7px; }
-  button { font: inherit; font-size: 11.5px; letter-spacing: .05em; color: #d8e0ee; cursor: pointer;
-    background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
-    padding: 9px 13px; border-radius: 9px; transition: background .18s, border-color .18s, color .18s; white-space: nowrap; }
-  button:hover { background: rgba(255,255,255,.1); }
-  button.on { background: rgba(120,190,255,.16); border-color: rgba(120,190,255,.45); color: #deefff; }
-  #label { position: absolute; padding: 5px 9px; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase;
-    background: rgba(9,11,15,.85); border: 1px solid rgba(255,255,255,.15); border-radius: 7px;
-    color: #e9eff9; opacity: 0; transition: opacity .15s; white-space: nowrap; transform: translate(-50%,-165%); }
-  #loading { position: fixed; inset: 0; display: grid; place-items: center; background: #0a0b0e;
-    color: #8993a6; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; transition: opacity .6s; z-index: 10; }
-  #loading.done { opacity: 0; pointer-events: none; }
-  @media (max-width: 760px) {
-    #title { padding: 10px 12px; } #title h1 { font-size: 11.5px; } #title p { font-size: 9.5px; }
-    button { padding: 8px 10px; font-size: 10.5px; } #controls { gap: 4px; bottom: 12px; }
+  :root{
+    color-scheme: dark;
+    --bg:#0a0c10; --panel:#11141b; --line:rgba(255,255,255,.09);
+    --ink:#e8edf5; --dim:#94a0b4; --dimmer:#6b778a;
+    --accent:#7fc4ff; --accent2:#ffb073; --ok:#6fe3a6;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg); color:var(--ink); -webkit-font-smoothing:antialiased;
+    font:15px/1.6 ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 22px}
+  code,pre{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace}
+
+  /* header */
+  header{border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(10,12,16,.82);backdrop-filter:blur(12px);z-index:20}
+  .bar{display:flex;align-items:center;gap:18px;height:58px}
+  .brand{font-weight:600;letter-spacing:-.01em;font-size:15px;display:flex;align-items:center;gap:9px}
+  .brand .dot{width:8px;height:8px;border-radius:2px;background:linear-gradient(135deg,var(--accent),var(--accent2))}
+  .bar nav{margin-left:auto;display:flex;gap:16px;font-size:13px}
+  .bar nav a{color:var(--dim)}
+  .bar nav a:hover{color:var(--ink);text-decoration:none}
+
+  /* hero */
+  .hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:30px;align-items:center;padding:52px 0 34px}
+  h1{font-size:clamp(27px,3.4vw,40px);line-height:1.12;margin:0 0 14px;letter-spacing:-.025em;font-weight:650}
+  h1 em{font-style:normal;background:linear-gradient(92deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lede{color:var(--dim);font-size:15.5px;margin:0 0 20px;max-width:46ch}
+  .pills{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:22px}
+  .pill{font-size:11.5px;letter-spacing:.02em;color:var(--dim);border:1px solid var(--line);background:var(--panel);padding:4px 9px;border-radius:999px}
+  .pill b{color:var(--ink);font-weight:600}
+  .cta{display:flex;gap:10px;flex-wrap:wrap}
+  .btn{display:inline-block;font-size:13.5px;padding:9px 15px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+  .btn:hover{text-decoration:none;border-color:rgba(127,196,255,.5)}
+  .btn.primary{background:linear-gradient(135deg,rgba(127,196,255,.2),rgba(255,176,115,.16));border-color:rgba(127,196,255,.45)}
+
+  /* viewer */
+  .stage{position:relative;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#0d1015;box-shadow:0 24px 70px rgba(0,0,0,.55)}
+  #view{display:block;width:100%;height:392px}
+  .stage .tag{position:absolute;left:12px;bottom:11px;font-size:11px;color:var(--dim);background:rgba(8,10,14,.72);border:1px solid var(--line);border-radius:8px;padding:5px 9px;pointer-events:none}
+  .stage .legend{position:absolute;right:12px;top:11px;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--dimmer);pointer-events:none}
+  .stage .loading{position:absolute;inset:0;display:grid;place-items:center;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--dimmer);background:#0d1015;transition:opacity .5s}
+  .stage .loading.done{opacity:0;pointer-events:none}
+
+  /* sections */
+  section{padding:40px 0;border-top:1px solid var(--line)}
+  h2{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--dimmer);margin:0 0 18px;font-weight:600}
+  h3{font-size:16px;margin:0 0 8px;letter-spacing:-.01em}
+  p{margin:0 0 14px}
+  .muted{color:var(--dim)}
+  .grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+  .grid2 > *{min-width:0}
+
+  pre{background:#0c0f14;border:1px solid var(--line);border-radius:12px;padding:15px 16px;overflow-x:auto;font-size:12.5px;line-height:1.65;margin:0 0 14px;color:#cfd8e6}
+  pre .c{color:#5f6b7d}
+  pre .k{color:#c9a6ff}
+  pre .s{color:#9fd6a0}
+  pre .f{color:#7fc4ff}
+
+  /* table */
+  .tblwrap{border:1px solid var(--line);border-radius:14px;overflow-x:auto;overflow-y:hidden}
+  table{min-width:560px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  thead th{text-align:left;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dimmer);font-weight:600;padding:11px 13px;background:#0d1015;border-bottom:1px solid var(--line)}
+  tbody td{padding:11px 13px;border-bottom:1px solid rgba(255,255,255,.05);vertical-align:middle}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr:hover{background:rgba(127,196,255,.045)}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;color:var(--dim)}
+  td.id{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:#b8c4d6}
+  .copy{font-size:11px;padding:5px 9px;border-radius:7px;border:1px solid var(--line);background:transparent;color:var(--dim);cursor:pointer;white-space:nowrap}
+  .copy:hover{border-color:rgba(127,196,255,.5);color:var(--ink)}
+  .copy.ok{color:var(--ok);border-color:rgba(111,227,166,.5)}
+
+  ul.clean{list-style:none;padding:0;margin:0}
+  ul.clean li{padding:9px 0 9px 22px;position:relative;border-bottom:1px solid rgba(255,255,255,.05);color:var(--dim);font-size:13.5px}
+  ul.clean li:last-child{border-bottom:0}
+  ul.clean li:before{content:"";position:absolute;left:2px;top:16px;width:6px;height:6px;border-radius:2px;background:var(--accent);opacity:.75}
+  ul.clean li b{color:var(--ink);font-weight:600}
+  ul.clean li.warn:before{background:var(--accent2)}
+
+  footer{padding:34px 0 54px;color:var(--dimmer);font-size:12.5px;border-top:1px solid var(--line)}
+  footer a{color:var(--dim)}
+  .foot{display:flex;gap:14px;flex-wrap:wrap;justify-content:space-between}
+
+  @media (max-width:860px){
+    .hero{grid-template-columns:1fr;gap:24px;padding:34px 0 26px}
+    .grid2{grid-template-columns:1fr}
+    #view{height:300px}
+    .bar nav{display:none}
+    section{padding:32px 0}
   }
 </style>
 <script type="importmap">
@@ -45,19 +108,132 @@
 </script>
 </head>
 <body>
-<div id="loading">Building storeroom</div>
-<div id="hud">
-  <div id="title" class="panel">
-    <h1>SimReady Storeroom</h1>
-    <p>USD assets from <b>nvidia/simready-assets</b><br>converted to glTF · 1 unit = 1 metre<br><a href="gallery.html" class="lnk">asset turntable →</a></p>
+
+<header>
+  <div class="wrap bar">
+    <div class="brand"><span class="dot"></span>simready-threejs</div>
+    <nav>
+      <a href="storeroom.html">Storeroom demo</a>
+      <a href="gallery.html">Gallery</a>
+      <a href="https://github.com/imsarah/simready-threejs">GitHub</a>
+    </nav>
   </div>
-  <div id="controls" class="panel">
-    <button id="orbit">Orbit</button>
-    <button id="wire">Wireframe</button>
-    <button id="reset">Reset view</button>
+</header>
+
+<main>
+  <div class="wrap">
+
+    <div class="hero">
+      <div>
+        <h1>SimReady assets that <em>just load</em> in three.js.</h1>
+        <p class="lede">NVIDIA's SimReady library ships as layered USD, which browsers cannot read. These are seven of those assets, converted to GLB — true metric scale, meshopt geometry, WebP textures — plus the small module that puts them in your scene.</p>
+        <div class="pills">
+          <span class="pill"><b>7</b> assets</span>
+          <span class="pill"><b>3.4 MB</b> total</span>
+          <span class="pill"><b>556K</b> triangles</span>
+          <span class="pill"><b>1 unit = 1 m</b></span>
+          <span class="pill"><b>CC BY 4.0</b></span>
+        </div>
+        <div class="cta">
+          <a class="btn primary" href="#use">Use it</a>
+          <a class="btn" href="storeroom.html">See the storeroom</a>
+          <a class="btn" href="https://github.com/imsarah/simready-threejs">Source</a>
+        </div>
+      </div>
+
+      <div class="stage">
+        <canvas id="view"></canvas>
+        <div class="legend">live · real scale</div>
+        <div class="tag" id="tag">1 m reference cube</div>
+        <div class="loading" id="loading">loading assets</div>
+      </div>
+    </div>
+
+    <section id="use">
+      <h2>Use it</h2>
+      <div class="grid2">
+        <div>
+          <h3>From a CDN, no build step</h3>
+          <p class="muted" style="font-size:13.5px">Drop this into any page that already uses three.js modules.</p>
+<pre><span class="c">&lt;!-- import map, once --&gt;</span>
+&lt;script type=<span class="s">"importmap"</span>&gt;{<span class="s">"imports"</span>:{
+  <span class="s">"three"</span>: <span class="s">"…/three.module.js"</span>,
+  <span class="s">"three/addons/"</span>: <span class="s">"…/examples/jsm/"</span>
+}}&lt;/script&gt;
+
+<span class="k">import</span> { createLoader, loadAsset } <span class="k">from</span>
+  <span class="s">'https://cdn.jsdelivr.net/gh/imsarah/simready-threejs@main/src/simready-threejs.js'</span>
+<span class="k">import</span> { GLTFLoader } <span class="k">from</span> <span class="s">'three/addons/loaders/GLTFLoader.js'</span>
+<span class="k">import</span> { MeshoptDecoder } <span class="k">from</span> <span class="s">'three/addons/libs/meshopt_decoder.module.js'</span>
+
+<span class="k">const</span> loader = <span class="f">createLoader</span>({ loaderClass: GLTFLoader, meshoptDecoder: MeshoptDecoder })
+
+<span class="k">const</span> { object, meta } = <span class="k">await</span> <span class="f">loadAsset</span>(<span class="s">'cart_mobile_e01'</span>, {
+  loader, THREE, floor: <span class="k">true</span>,
+})
+scene.<span class="f">add</span>(object)
+console.<span class="f">log</span>(meta.measured.size) <span class="c">// { x: 0.401, y: 1.579, z: 0.838 }</span></pre>
+        </div>
+        <div>
+          <h3>Or straight from the manifest</h3>
+          <p class="muted" style="font-size:13.5px">Every file is a plain GLB — no library needed if you already have a loader.</p>
+<pre><span class="k">const</span> CDN = <span class="s">'https://cdn.jsdelivr.net/gh/imsarah/simready-threejs@main/'</span>
+
+<span class="c">// any loader with a meshopt decoder</span>
+loader.<span class="f">load</span>(CDN + <span class="s">'assets/box_corrugated_brown_b08.glb'</span>,
+  (gltf) =&gt; scene.<span class="f">add</span>(gltf.scene))
+
+<span class="c">// catalogue: real dimensions + triangle counts</span>
+<span class="k">const</span> manifest = <span class="k">await</span> (<span class="k">await</span> <span class="f">fetch</span>(
+  CDN + <span class="s">'manifest.json'</span>)).<span class="f">json</span>()
+manifest.assets[<span class="s">'cart_mobile_e01'</span>].size_m
+<span class="c">// → { x: 0.401, y: 1.579, z: 0.838 }</span></pre>
+          <ul class="clean" style="font-size:13px">
+            <li><b>Y-up, 1 unit = 1 metre.</b> No rescaling by eye.</li>
+            <li><b>meshopt + WebP</b> — needs <code>MeshoptDecoder</code>; textures are WebP, fine in every modern browser.</li>
+            <li><b>No physics.</b> Render geometry only — colliders stay in the SimReady USD.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="assets">
+      <h2>Assets</h2>
+      <div class="tblwrap">
+        <table>
+          <thead>
+            <tr><th>Asset</th><th>What it is</th><th style="text-align:right">Size (m)</th><th style="text-align:right">Triangles</th><th style="text-align:right">GLB</th><th>Copy URL</th></tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <p class="muted" style="font-size:12.5px;margin-top:12px">Sizes are measured from the loaded geometry in metres. Pin a commit instead of <code>@main</code> if you want immutable URLs.</p>
+    </section>
+
+    <section>
+      <h2>Worth knowing</h2>
+      <div class="grid2">
+        <ul class="clean">
+          <li><b>Converted, not exported by hand.</b> The converter walks the composed USD stage, bakes prototype instances, and rebuilds indexed UVs — the three traps that break naive conversion.</li>
+          <li><b>64–99% smaller</b> than the source USD folders (the cart is 142 MB on Hugging Face, 1.16 MB here).</li>
+          <li><b>Verified against published ground truth.</b> An eighth asset converted blind (eyeglasses) matched the reference exactly: 4 meshes, 42,168 triangles.</li>
+        </ul>
+        <ul class="clean">
+          <li class="warn"><b>MDL-only assets will fail silently.</b> Only <code>UsdPreviewSurface</code> materials convert; always eyeball output.</li>
+          <li class="warn"><b>Default variant only.</b> SimReady physics variants (rigid/deformable) are not selectable yet.</li>
+          <li class="warn"><b>Props, not scenes.</b> Single assets up to ~300K triangles; nested assemblies are untested.</li>
+        </ul>
+      </div>
+    </section>
   </div>
-  <div id="label"></div>
-</div>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <span>3D assets by NVIDIA, from <a href="https://huggingface.co/datasets/nvidia/simready-assets">nvidia/simready-assets</a>, licensed CC BY 4.0. Code MIT. Not affiliated with NVIDIA.</span>
+    <span><a href="storeroom.html">storeroom</a> · <a href="gallery.html">gallery</a> · <a href="https://github.com/imsarah/simready-threejs">github</a></span>
+  </div>
+</footer>
 
 <script type="module">
 import * as THREE from 'three';
@@ -65,434 +241,147 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { ASSETS, createLoader, loadAsset, metreReference, assetUrl, setBase, CDN_BASE } from './src/simready-threejs.js';
 
-const A = {
-  box:    'assets/box_corrugated_brown_b08.glb',
-  pan:    'assets/kitchenware_pan_n01.glb',
-  banana: 'assets/food_produce_banana_m01.glb',
-  tomato: 'assets/food_produce_tomato_a01.glb',
-  cake:   'assets/food_prepared_cake_a01.glb',
-  gloves: 'assets/ppe_gloves_cloth_a01.glb',
-  cart:   'assets/cart_mobile_e01.glb',
-};
+// load from this origin (fast); copy buttons below still hand out the CDN URL
+setBase('./');
 
-/* ------------------------------------------------ renderer */
-const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+/* ---------- table ---------- */
+const rows = document.getElementById('rows');
+for (const [id, a] of Object.entries(ASSETS).sort((p, q) => p[1].sortOrder - q[1].sortOrder)) {
+  const tr = document.createElement('tr');
+  const kb = Math.round(a.bytes / 1024);
+  tr.innerHTML = `
+    <td class="id">${id}</td>
+    <td>${a.name}</td>
+    <td class="num">${a.size.x} × ${a.size.y} × ${a.size.z}</td>
+    <td class="num">${a.triangles.toLocaleString()}</td>
+    <td class="num">${kb} KB</td>
+    <td><button class="copy" data-url="${CDN_BASE}assets/${id}.glb">copy</button></td>`;
+  rows.appendChild(tr);
+}
+rows.addEventListener('click', async (e) => {
+  const b = e.target.closest('.copy');
+  if (!b) return;
+  try {
+    await navigator.clipboard.writeText(b.dataset.url);
+    b.textContent = 'copied';
+    b.classList.add('ok');
+    setTimeout(() => { b.textContent = 'copy'; b.classList.remove('ok'); }, 1400);
+  } catch {
+    b.textContent = 'ctrl+c';
+  }
+});
+
+/* ---------- live viewer ---------- */
+const canvas = document.getElementById('view');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.0;
+renderer.toneMappingExposure = 1.05;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-document.body.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0a0b0e);
-scene.fog = new THREE.FogExp2(0x0a0b0e, 0.075);
+scene.background = new THREE.Color(0x0d1015);
+scene.fog = new THREE.FogExp2(0x0d1015, 0.1);
 
 const pmrem = new THREE.PMREMGenerator(renderer);
 scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-scene.environmentIntensity = 0.30;
+scene.environmentIntensity = 0.75;
 
-/* ------------------------------------------------ camera */
-const camera = new THREE.PerspectiveCamera(40, innerWidth / innerHeight, 0.02, 40);
-const HOME = new THREE.Vector3(1.42, 1.20, 1.86);
-const TARGET = new THREE.Vector3(0.03, 0.66, -0.30);
-
-const PORTRAIT = innerWidth / innerHeight < 1.05;
-function camHome() {
-  return PORTRAIT ? new THREE.Vector3(2.30, 1.80, 2.85) : HOME.clone();
-}
-function applyAspect() {
-  const a = innerWidth / innerHeight;
-  camera.aspect = a;
-  camera.fov = a < 1.05 ? 56 : 40;
-  camera.updateProjectionMatrix();
-}
-applyAspect();
-
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.copy(PORTRAIT ? new THREE.Vector3(0.10, 0.68, -0.34) : TARGET);
+const camera = new THREE.PerspectiveCamera(38, 1, 0.01, 60);
+const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
-controls.dampingFactor = 0.07;
-controls.minDistance = 0.55;
-controls.maxDistance = 3.4;
-controls.minPolarAngle = 0.30;
+controls.dampingFactor = 0.08;
+controls.target.set(0, 0.55, 0);
+controls.minDistance = 1.2;
+controls.maxDistance = 9;
 controls.maxPolarAngle = Math.PI * 0.495;
-controls.minAzimuthAngle = 0.06;
-controls.maxAzimuthAngle = 1.38;
-controls.enablePan = false;
 
-/* ------------------------------------------------ textures */
-function noiseTexture(size, base, spec, grid) {
-  const c = document.createElement('canvas');
-  c.width = c.height = size;
-  const g = c.getContext('2d');
-  g.fillStyle = base;
-  g.fillRect(0, 0, size, size);
-  const img = g.getImageData(0, 0, size, size);
-  for (let i = 0; i < img.data.length; i += 4) {
-    const n = (Math.random() - 0.5) * 255 * spec;
-    img.data[i] += n; img.data[i + 1] += n; img.data[i + 2] += n;
-  }
-  g.putImageData(img, 0, 0);
-  if (grid) {
-    g.strokeStyle = 'rgba(0,0,0,0.10)';
-    g.lineWidth = 1;
-    for (let i = 0; i <= size; i += size / grid) {
-      g.beginPath(); g.moveTo(i, 0); g.lineTo(i, size); g.stroke();
-      g.beginPath(); g.moveTo(0, i); g.lineTo(size, i); g.stroke();
-    }
-  }
-  const t = new THREE.CanvasTexture(c);
-  t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = renderer.capabilities.getMaxAnisotropy();
-  return t;
-}
+scene.add(new THREE.HemisphereLight(0x9dc2ff, 0x0a0d12, 0.45));
+const key = new THREE.DirectionalLight(0xffffff, 3.2);
+key.position.set(1.6, 3.2, 2.2);
+key.castShadow = true;
+key.shadow.mapSize.set(1024, 1024);
+const sc = key.shadow.camera;
+sc.left = -3; sc.right = 3; sc.top = 3; sc.bottom = -3; sc.near = 0.5; sc.far = 12;
+key.shadow.bias = -0.0006;
+key.shadow.normalBias = 0.002;
+scene.add(key);
+const rim = new THREE.DirectionalLight(0x88b6ff, 0.7);
+rim.position.set(-2.4, 1.8, -2.2);
+scene.add(rim);
 
-/* ------------------------------------------------ room shell */
-const ROOM = { w: 3.2, d: 2.9, h: 2.35 };
-const room = new THREE.Group();
-scene.add(room);
-
-const concreteTex = noiseTexture(512, '#5b5f63', 0.16, 0);
-concreteTex.repeat.set(2.2, 2.0);
+// 1 m grid + floor
+const grid = new THREE.GridHelper(10, 10, 0x2a3444, 0x1a2230);
+grid.position.y = 0.001;
+scene.add(grid);
 const floor = new THREE.Mesh(
-  new THREE.PlaneGeometry(ROOM.w + 2.4, ROOM.d + 2.6),
-  new THREE.MeshStandardMaterial({ map: concreteTex, color: 0x74797e, roughness: 0.86, metalness: 0.05 })
+  new THREE.PlaneGeometry(30, 30),
+  new THREE.MeshStandardMaterial({ color: 0x0f1319, roughness: 0.55, metalness: 0.15 })
 );
-floor.position.z = 0.4;
 floor.rotation.x = -Math.PI / 2;
 floor.receiveShadow = true;
-room.add(floor);
+scene.add(floor);
 
-const wallTex = noiseTexture(512, '#bdb6aa', 0.045, 0);
-wallTex.repeat.set(2, 1.6);
-const wallMatBase = new THREE.MeshStandardMaterial({ map: wallTex, color: 0xc4bdaf, roughness: 0.95, metalness: 0 });
-const wallB = new THREE.Mesh(new THREE.PlaneGeometry(ROOM.w, ROOM.h), wallMatBase);
-wallB.position.set(0, ROOM.h / 2, -ROOM.d / 2);
-wallB.receiveShadow = true;
-room.add(wallB);
+// the reference cube makes scale obvious without a single label
+scene.add(metreReference(THREE));
 
-const wallL = new THREE.Mesh(new THREE.PlaneGeometry(ROOM.d + 1.6, ROOM.h), wallMatBase);
-wallL.rotation.y = Math.PI / 2;
-wallL.position.set(-ROOM.w / 2, ROOM.h / 2, 0.7);
-wallL.receiveShadow = true;
-room.add(wallL);
+const loader = createLoader({ loaderClass: GLTFLoader, meshoptDecoder: MeshoptDecoder });
 
-const wallR = new THREE.Mesh(new THREE.PlaneGeometry(ROOM.d + 1.6, ROOM.h), wallMatBase);
-wallR.rotation.y = -Math.PI / 2;
-wallR.position.set(ROOM.w / 2, ROOM.h / 2, 0.7);
-wallR.receiveShadow = true;
-room.add(wallR);
+const layout = [
+  ['cart_mobile_e01', [-1.30, 0, -0.15], 0.38],
+  ['box_corrugated_brown_b08', [1.12, 0, -0.62], 0.42],
+  ['kitchenware_pan_n01', [0.92, 0, 0.20], -0.55],
+  ['food_produce_tomato_a01', [0.66, 0, 0.72], 0.4],
+  ['food_prepared_cake_a01', [1.02, 0, 0.62], -0.35],
+];
 
-const ceiling = new THREE.Mesh(
-  new THREE.PlaneGeometry(ROOM.w + 1.6, ROOM.d + 1.6),
-  new THREE.MeshStandardMaterial({ color: 0x35383d, roughness: 0.96 })
-);
-ceiling.rotation.x = Math.PI / 2;
-ceiling.position.y = ROOM.h;
-ceiling.position.z = 0.5;
-room.add(ceiling);
-
-const skirtMat = new THREE.MeshStandardMaterial({ color: 0x44484e, roughness: 0.72, metalness: 0.18 });
-function skirt(w, x, z, rotY) {
-  const m = new THREE.Mesh(new THREE.BoxGeometry(w, 0.085, 0.018), skirtMat);
-  m.position.set(x, 0.0425, z);
-  m.rotation.y = rotY;
-  m.castShadow = m.receiveShadow = true;
-  room.add(m);
-}
-skirt(ROOM.w, 0, -ROOM.d / 2 + 0.01, 0);
-skirt(ROOM.d, -ROOM.w / 2 + 0.01, 0, Math.PI / 2);
-skirt(ROOM.d, ROOM.w / 2 - 0.01, 0, Math.PI / 2);
-
-/* ------------------------------------------------ window on the left wall */
-const winW = 0.92, winH = 0.78, winY = 1.46, winZ = 0.34;
-const frameMat = new THREE.MeshStandardMaterial({ color: 0xd9dade, roughness: 0.6, metalness: 0.15 });
-function skyTexture() {
-  const c = document.createElement('canvas');
-  c.width = 256; c.height = 256;
-  const g = c.getContext('2d');
-  const grd = g.createLinearGradient(0, 0, 0, 256);
-  grd.addColorStop(0, '#cfe4fb');
-  grd.addColorStop(0.55, '#e8f1fb');
-  grd.addColorStop(0.78, '#cfd6da');
-  grd.addColorStop(1, '#9aa3a8');
-  g.fillStyle = grd;
-  g.fillRect(0, 0, 256, 256);
-  // distant rooftops
-  g.fillStyle = 'rgba(120,130,140,0.55)';
-  let x = 0;
-  while (x < 256) {
-    const w = 18 + Math.random() * 34;
-    const h = 26 + Math.random() * 46;
-    g.fillRect(x, 256 - h, w, h);
-    x += w + 3;
-  }
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
-}
-const glass = new THREE.Mesh(
-  new THREE.PlaneGeometry(winW, winH),
-  new THREE.MeshBasicMaterial({ map: skyTexture(), toneMapped: false })
-);
-glass.rotation.y = Math.PI / 2;
-glass.position.set(-ROOM.w / 2 + 0.015, winY, winZ);
-room.add(glass);
-
-for (const dz of [-winW / 2, winW / 2]) {
-  const f = new THREE.Mesh(new THREE.BoxGeometry(0.05, winH + 0.08, 0.05), frameMat);
-  f.position.set(-ROOM.w / 2 + 0.02, winY, winZ + dz);
-  f.castShadow = true; room.add(f);
-}
-for (const dy of [-winH / 2, winH / 2]) {
-  const f = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, winW + 0.08), frameMat);
-  f.position.set(-ROOM.w / 2 + 0.02, winY + dy, winZ);
-  f.castShadow = true; room.add(f);
-}
-const mullion = new THREE.Mesh(new THREE.BoxGeometry(0.04, winH, 0.03), frameMat);
-mullion.position.set(-ROOM.w / 2 + 0.02, winY, winZ);
-room.add(mullion);
-
-const sill = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.03, winW + 0.1), frameMat);
-sill.position.set(-ROOM.w / 2 + 0.05, winY - winH / 2 - 0.02, winZ);
-sill.castShadow = true; sill.receiveShadow = true;
-room.add(sill);
-
-/* ------------------------------------------------ shelving unit */
-const steel = new THREE.MeshStandardMaterial({ color: 0xa2a9b0, roughness: 0.40, metalness: 0.86 });
-const RACK = { w: 0.92, d: 0.34, levels: [0.20, 0.76, 1.32], x: -1.04, z: -1.20 };
-const rack = new THREE.Group();
-rack.position.set(RACK.x, 0, RACK.z);
-room.add(rack);
-for (const x of [-RACK.w / 2 + 0.02, RACK.w / 2 - 0.02]) {
-  for (const z of [-RACK.d / 2 + 0.02, RACK.d / 2 - 0.02]) {
-    const post = new THREE.Mesh(new THREE.BoxGeometry(0.032, 1.62, 0.032), steel);
-    post.position.set(x, 0.81, z);
-    post.castShadow = true; post.receiveShadow = true;
-    rack.add(post);
-  }
-}
-for (const y of RACK.levels) {
-  const board = new THREE.Mesh(new THREE.BoxGeometry(RACK.w, 0.012, RACK.d), steel);
-  board.position.set(0, y - 0.006, 0);
-  board.castShadow = true; board.receiveShadow = true;
-  rack.add(board);
-}
-
-/* ------------------------------------------------ wooden prep table */
-const woodMat = new THREE.MeshStandardMaterial({ color: 0xb08a63, roughness: 0.8, metalness: 0.02 });
-const TABLE = { w: 0.48, d: 0.38, h: 0.79, x: 0.50, z: 0.10 };
-const table = new THREE.Group();
-table.position.set(TABLE.x, 0, TABLE.z);
-table.rotation.y = -0.22;
-room.add(table);
-
-const tabletop = new THREE.Mesh(new THREE.BoxGeometry(TABLE.w, 0.035, TABLE.d), woodMat);
-tabletop.position.y = TABLE.h - 0.0175;
-tabletop.castShadow = tabletop.receiveShadow = true;
-table.add(tabletop);
-
-const legMat = new THREE.MeshStandardMaterial({ color: 0x4a3524, roughness: 0.7, metalness: 0.05 });
-const legGeo = new THREE.BoxGeometry(0.045, TABLE.h - 0.035, 0.045);
-for (const sx of [-1, 1]) {
-  for (const sz of [-1, 1]) {
-    const leg = new THREE.Mesh(legGeo, legMat);
-    leg.position.set(sx * (TABLE.w / 2 - 0.06), (TABLE.h - 0.035) / 2, sz * (TABLE.d / 2 - 0.06));
-    leg.castShadow = true; leg.receiveShadow = true;
-    table.add(leg);
-  }
-}
-const apron = new THREE.Mesh(new THREE.BoxGeometry(TABLE.w - 0.08, 0.06, TABLE.d - 0.08), legMat);
-apron.position.y = TABLE.h - 0.07;
-apron.castShadow = true;
-table.add(apron);
-
-/* ------------------------------------------------ lights */
-scene.add(new THREE.HemisphereLight(0xc2d6ff, 0x201d1a, 0.34));
-
-const sun = new THREE.SpotLight(0xcfe2ff, 40, 8, 0.72, 0.85, 1.3);
-sun.position.set(-ROOM.w / 2 - 0.35, winY + 0.55, winZ + 0.15);
-sun.target.position.set(0.55, 0.25, 0.1);
-sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
-sun.shadow.camera.near = 0.2; sun.shadow.camera.far = 6;
-sun.shadow.bias = -0.0006;
-sun.shadow.normalBias = 0.002;
-sun.shadow.radius = 5;
-scene.add(sun, sun.target);
-
-const stripMat = new THREE.MeshStandardMaterial({ color: 0xf6f2ea, emissive: 0xfff4e6, emissiveIntensity: 2.2, toneMapped: false });
-const strip = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.035, 0.16), stripMat);
-strip.position.set(-0.05, ROOM.h - 0.03, -0.78);
-room.add(strip);
-
-const ceil = new THREE.SpotLight(0xfff2e0, 34, 6, 0.95, 0.6, 1.7);
-ceil.position.set(-0.05, ROOM.h - 0.06, -0.72);
-ceil.target.position.set(-0.1, 0, -0.45);
-ceil.castShadow = true;
-ceil.shadow.mapSize.set(2048, 2048);
-ceil.shadow.camera.near = 0.2; ceil.shadow.camera.far = 5;
-ceil.shadow.bias = -0.0008;
-ceil.shadow.normalBias = 0.003;
-ceil.shadow.radius = 4;
-scene.add(ceil, ceil.target);
-
-const bounce = new THREE.PointLight(0xffdcb8, 4.2, 3.0, 2.1);
-bounce.position.set(0.35, 0.45, 0.55);
-scene.add(bounce);
-
-/* ------------------------------------------------ asset loading */
-const loader = new GLTFLoader();
-loader.setMeshoptDecoder(MeshoptDecoder);
-const cache = {};
-const wireMats = [];
-const pickables = [];
-const labelEl = document.getElementById('label');
-
-async function load(key) {
-  if (!cache[key]) {
-    const g = await loader.loadAsync(A[key]);
-    g.scene.traverse((o) => {
-      if (o.isMesh) {
-        o.castShadow = true; o.receiveShadow = true;
-        (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => {
-          if (m) { m.envMapIntensity = 0.85; wireMats.push(m); }
-        });
-      }
-    });
-    cache[key] = g.scene;
-  }
-  return cache[key];
-}
-
-async function place(key, { pos, rotY = 0, rotX = 0, rotZ = 0, scale = 1, name, parent = room }) {
-  const src = await load(key);
-  const root = src.clone(true);
-  root.scale.setScalar(scale);
-  root.rotation.set(rotX, rotY, rotZ);
-  root.position.y -= new THREE.Box3().setFromObject(root).min.y;
-  const holder = new THREE.Group();
-  holder.add(root);
-  holder.position.set(pos[0], pos[1], pos[2]);
-  parent.add(holder);
-  pickables.push({ holder, name: name || key });
-  return holder;
-}
-
-async function build() {
-  // rack dressing
-  await place('box',    { pos: [RACK.x - 0.02, 0.20, RACK.z + 0.01], rotY: 0.5,   scale: 0.78, name: 'carton' });
-  await place('box',    { pos: [RACK.x - 0.12, 0.76, RACK.z - 0.02], rotY: -0.2,  scale: 0.72, name: 'carton' });
-  await place('cake',   { pos: [RACK.x + 0.22, 0.76, RACK.z + 0.02], rotY: -0.55, scale: 1.0,  name: 'cake' });
-  await place('gloves', { pos: [RACK.x - 0.20, 1.32, RACK.z + 0.02], rotY: 0.35,  scale: 1.0,  name: 'PPE gloves' });
-  await place('box',    { pos: [RACK.x + 0.22, 1.32, RACK.z + 0.02], rotY: 0.15,  scale: 0.6,  name: 'carton' });
-
-  // floor stock
-  await place('box', { pos: [-0.42, 0, -1.02], rotY: -0.35, scale: 1.0, name: 'carton' });
-  await place('box', { pos: [-0.44, 0.304, -1.03], rotY: 0.22, scale: 0.78, name: 'carton' });
-
-  // cart
-  await place('cart', { pos: [0.95, 0, -0.82], rotY: -0.78, scale: 1.0, name: 'mobile cart' });
-
-  // prep table: pan with produce
-  await place('pan',    { pos: [TABLE.x - 0.02, TABLE.h, TABLE.z + 0.02], rotY: -0.62, scale: 1.0, name: 'frying pan' });
-  await place('banana', { pos: [TABLE.x - 0.05, TABLE.h + 0.022, TABLE.z - 0.02], rotY: 0.75, rotZ: 0.10, scale: 1.0, name: 'banana' });
-  await place('tomato', { pos: [TABLE.x + 0.06, TABLE.h + 0.020, TABLE.z + 0.07], rotY: 0.4, scale: 1.0, name: 'tomato' });
-  await place('tomato', { pos: [TABLE.x - 0.06, TABLE.h + 0.020, TABLE.z + 0.08], rotY: 1.9, scale: 1.0, name: 'tomato' });
-
+const fps = [];
+(async () => {
+  await Promise.all(layout.map(async ([id, pos, rot]) => {
+    try {
+      const { object, meta } = await loadAsset(id, { loader, THREE, floor: true });
+      object.position.set(pos[0], object.position.y, pos[2]);
+      object.rotation.y = rot;
+      scene.add(object);
+      fps.push(meta);
+    } catch (err) {
+      console.warn('failed to load', id, err);
+    }
+  }));
   document.getElementById('loading').classList.add('done');
+  document.getElementById('tag').textContent =
+    '1 m reference cube · cart is ' + (ASSETS['cart_mobile_e01'].size.y).toFixed(2) + ' m tall';
   window.__ready = true;
-}
-build();
+})();
 
-/* ------------------------------------------------ hover labels */
-const raycaster = new THREE.Raycaster();
-const pointer = new THREE.Vector2(-10, -10);
-let hovered = null;
-addEventListener('pointermove', (e) => {
-  pointer.x = (e.clientX / innerWidth) * 2 - 1;
-  pointer.y = -(e.clientY / innerHeight) * 2 + 1;
-  labelEl.style.left = e.clientX + 'px';
-  labelEl.style.top = e.clientY + 'px';
-});
-function pick() {
-  raycaster.setFromCamera(pointer, camera);
-  const hits = raycaster.intersectObjects(pickables.map(p => p.holder), true);
-  let found = null;
-  if (hits.length) {
-    let p = hits[0].object;
-    while (p && !pickables.some(o => o.holder === p)) p = p.parent;
-    found = p ? pickables.find(o => o.holder === p) : null;
-  }
-  if (found !== hovered) {
-    hovered = found;
-    labelEl.textContent = found ? found.name : '';
-    labelEl.style.opacity = found ? 1 : 0;
-    renderer.domElement.style.cursor = found ? 'pointer' : 'grab';
-  }
+function resize() {
+  const w = canvas.clientWidth || 640;
+  const h = canvas.clientHeight || 392;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.fov = w / h < 0.9 ? 54 : 38;
+  camera.updateProjectionMatrix();
 }
+new ResizeObserver(resize).observe(canvas);
+resize();
 
-/* ------------------------------------------------ ui */
-let orbit = false, wire = false;
-document.getElementById('orbit').onclick = (e) => {
-  orbit = !orbit; e.currentTarget.classList.toggle('on', orbit);
-};
-document.getElementById('wire').onclick = (e) => {
-  wire = !wire; e.currentTarget.classList.toggle('on', wire);
-  wireMats.forEach(m => { m.wireframe = wire; });
-};
-document.getElementById('reset').onclick = () => {
-  camera.position.copy(camHome());
-  controls.target.copy(PORTRAIT ? new THREE.Vector3(0.10, 0.68, -0.34) : TARGET);
+const PORTRAIT = () => canvas.clientWidth / canvas.clientHeight < 0.9;
+function home() {
+  if (PORTRAIT()) { camera.position.set(2.35, 1.95, 3.35); controls.target.set(-0.2, 0.55, 0); }
+  else { camera.position.set(1.92, 1.48, 2.72); controls.target.set(0.05, 0.52, 0); }
   controls.update();
-};
-addEventListener('resize', () => {
-  applyAspect();
-  renderer.setSize(innerWidth, innerHeight);
-});
+}
+home();
 
-/* ------------------------------------------------ loop */
-const clock = new THREE.Clock();
-let az = 0.70;
-function tick() {
-  const dt = Math.min(clock.getDelta(), 0.05);
-  if (orbit) {
-    az += dt * 0.14;
-    if (az > 1.30) az = 0.16;
-    const r = camera.position.distanceTo(controls.target);
-    const y = 0.62 + r * 0.30;
-    camera.position.set(
-      controls.target.x + Math.sin(az) * r * 0.92,
-      y,
-      controls.target.z + Math.cos(az) * r * 0.92
-    );
-    controls.update();
-  }
-  pick();
+(function tick() {
+  requestAnimationFrame(tick);
   controls.update();
   renderer.render(scene, camera);
-  requestAnimationFrame(tick);
-}
-
-camera.position.set(2.35, 1.95, 2.55);
-let intro = 0;
-const from = camera.position.clone();
-controls.enabled = false;
-function introTick() {
-  intro = Math.min(1, intro + 0.012);
-  const t = 1 - Math.pow(1 - intro, 3);
-  camera.position.lerpVectors(from, camHome(), t);
-  camera.lookAt(TARGET);
-  if (intro < 1) requestAnimationFrame(introTick);
-  else { controls.enabled = true; controls.update(); }
-}
-introTick();
-tick();
+})();
 </script>
 </body>
 </html>

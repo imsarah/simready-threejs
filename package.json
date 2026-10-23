@@ -1,0 +1,45 @@
+{
+  "name": "simready-threejs",
+  "version": "0.1.0",
+  "description": "NVIDIA SimReady assets as web-ready glTF for three.js, at true metric scale (1 unit = 1 metre).",
+  "type": "module",
+  "main": "src/simready-threejs.js",
+  "exports": {
+    ".": "./src/simready-threejs.js",
+    "./manifest.json": "./manifest.json",
+    "./assets/*": "./assets/*"
+  },
+  "files": [
+    "src/",
+    "assets/",
+    "manifest.json",
+    "LICENSE",
+    "LICENSE-assets.txt",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "three": ">=0.160.0"
+  },
+  "keywords": [
+    "threejs",
+    "three",
+    "simready",
+    "nvidia",
+    "usd",
+    "gltf",
+    "glb",
+    "3d",
+    "webgl",
+    "robotics",
+    "simulation"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/imsarah/simready-threejs.git"
+  },
+  "homepage": "https://imsarah.github.io/simready-threejs/",
+  "bugs": {
+    "url": "https://github.com/imsarah/simready-threejs/issues"
+  }
+}

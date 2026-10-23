@@ -1,0 +1,130 @@
+{
+  "name": "simready-threejs",
+  "description": "NVIDIA SimReady assets converted to web-ready glTF for three.js, at true metric scale (1 unit = 1 metre).",
+  "dataset": "nvidia/simready-assets",
+  "datasetRevision": "524747d9b5e1f21b5b18b56041788c01d745f1a1",
+  "upAxis": "Y",
+  "metersPerUnit": 1.0,
+  "encoding": {
+    "geometry": "EXT_meshopt_compression",
+    "textures": "WebP (EXT_texture_webp, 1024px max)"
+  },
+  "license": "CC-BY-4.0 (assets) / MIT (code)",
+  "attribution": "3D assets by NVIDIA, from nvidia/simready-assets, licensed CC BY 4.0.",
+  "totalBytes": 3463672,
+  "totalTriangles": 555937,
+  "assets": {
+    "cart_mobile_e01": {
+      "name": "mobile cart",
+      "file": "assets/cart_mobile_e01.glb",
+      "bytes": 1187792,
+      "triangles": 298146,
+      "vertices": 894438,
+      "meshes": 9,
+      "size_m": {
+        "x": 0.401,
+        "y": 1.579,
+        "z": 0.838
+      },
+      "source": "https://huggingface.co/datasets/nvidia/simready-assets/tree/main/cart_mobile_e01",
+      "license": "CC-BY-4.0",
+      "attribution": "NVIDIA SimReady"
+    },
+    "box_corrugated_brown_b08": {
+      "name": "corrugated carton",
+      "file": "assets/box_corrugated_brown_b08.glb",
+      "bytes": 376024,
+      "triangles": 15999,
+      "vertices": 47997,
+      "meshes": 1,
+      "size_m": {
+        "x": 0.297,
+        "y": 0.304,
+        "z": 0.304
+      },
+      "source": "https://huggingface.co/datasets/nvidia/simready-assets/tree/main/box_corrugated_brown_b08",
+      "license": "CC-BY-4.0",
+      "attribution": "NVIDIA SimReady"
+    },
+    "kitchenware_pan_n01": {
+      "name": "frying pan",
+      "file": "assets/kitchenware_pan_n01.glb",
+      "bytes": 175220,
+      "triangles": 15392,
+      "vertices": 46176,
+      "meshes": 1,
+      "size_m": {
+        "x": 0.204,
+        "y": 0.053,
+        "z": 0.36
+      },
+      "source": "https://huggingface.co/datasets/nvidia/simready-assets/tree/main/kitchenware_pan_n01",
+      "license": "CC-BY-4.0",
+      "attribution": "NVIDIA SimReady"
+    },
+    "food_prepared_cake_a01": {
+      "name": "cake slice",
+      "file": "assets/food_prepared_cake_a01.glb",
+      "bytes": 216004,
+      "triangles": 6990,
+      "vertices": 20970,
+      "meshes": 1,
+      "size_m": {
+        "x": 0.086,
+        "y": 0.07,
+        "z": 0.104
+      },
+      "source": "https://huggingface.co/datasets/nvidia/simready-assets/tree/main/food_prepared_cake_a01",
+      "license": "CC-BY-4.0",
+      "attribution": "NVIDIA SimReady"
+    },
+    "food_produce_banana_m01": {
+      "name": "banana",
+      "file": "assets/food_produce_banana_m01.glb",
+      "bytes": 91556,
+      "triangles": 7148,
+      "vertices": 21444,
+      "meshes": 1,
+      "size_m": {
+        "x": 0.09,
+        "y": 0.028,
+        "z": 0.148
+      },
+      "source": "https://huggingface.co/datasets/nvidia/simready-assets/tree/main/food_produce_banana_m01",
+      "license": "CC-BY-4.0",
+      "attribution": "NVIDIA SimReady"
+    },
+    "food_produce_tomato_a01": {
+      "name": "tomato",
+      "file": "assets/food_produce_tomato_a01.glb",
+      "bytes": 87700,
+      "triangles": 9996,
+      "vertices": 29988,
+      "meshes": 1,
+      "size_m": {
+        "x": 0.065,
+        "y": 0.057,
+        "z": 0.062
+      },
+      "source": "https://huggingface.co/datasets/nvidia/simready-assets/tree/main/food_produce_tomato_a01",
+      "license": "CC-BY-4.0",
+      "attribution": "NVIDIA SimReady"
+    },
+    "ppe_gloves_cloth_a01": {
+      "name": "PPE gloves",
+      "file": "assets/ppe_gloves_cloth_a01.glb",
+      "bytes": 1329376,
+      "triangles": 202266,
+      "vertices": 606798,
+      "meshes": 2,
+      "size_m": {
+        "x": 0.233,
+        "y": 0.053,
+        "z": 0.252
+      },
+      "source": "https://huggingface.co/datasets/nvidia/simready-assets/tree/main/ppe_gloves_cloth_a01",
+      "license": "CC-BY-4.0",
+      "attribution": "NVIDIA SimReady"
+    }
+  }
+}
