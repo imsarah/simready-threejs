@@ -15,7 +15,7 @@ export const METERS_PER_UNIT = 1;
 
 /** Base for the hosted assets (jsDelivr serves straight from the GitHub repo). */
 export const CDN_BASE =
-  'https://cdn.jsdelivr.net/gh/imsarah/simready-threejs@main/';
+  'https://cdn.jsdelivr.net/gh/imsarah/simready-threejs@v0.1.1/';
 
 /**
  * Where `assetUrl()` resolves relative ids. Defaults to the public CDN; call

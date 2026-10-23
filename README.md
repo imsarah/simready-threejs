@@ -10,7 +10,7 @@ are baked into real geometry, and the whole set is compressed for the web.
 **Live demo & docs:** https://imsarah.github.io/simready-threejs/
 
 ```js
-import { createLoader, loadAsset } from 'https://cdn.jsdelivr.net/gh/imsarah/simready-threejs@main/src/simready-threejs.js'
+import { createLoader, loadAsset } from 'https://cdn.jsdelivr.net/gh/imsarah/simready-threejs@v0.1.1/src/simready-threejs.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js'
 
@@ -24,7 +24,7 @@ meta.measured.size // → { x: 0.401, y: 1.579, z: 0.838 } metres
 No library needed if you already have a loader — every file is a plain GLB:
 
 ```js
-loader.load('https://cdn.jsdelivr.net/gh/imsarah/simready-threejs@main/assets/box_corrugated_brown_b08.glb',
+loader.load('https://cdn.jsdelivr.net/gh/imsarah/simready-threejs@v0.1.1/assets/box_corrugated_brown_b08.glb',
   (gltf) => scene.add(gltf.scene))
 ```
 
