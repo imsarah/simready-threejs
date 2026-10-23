@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>SimReady Gallery — asset turntable</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #07080b;
+    font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  canvas { display: block; }
+  #hud { position: fixed; inset: 0; pointer-events: none; color: #e8ecf3; }
+  .panel { position: absolute; pointer-events: auto; backdrop-filter: blur(14px) saturate(140%);
+    background: rgba(16,18,24,.6); border: 1px solid rgba(255,255,255,.09);
+    border-radius: 14px; box-shadow: 0 18px 50px rgba(0,0,0,.5); }
+  #title { top: 18px; left: 18px; padding: 13px 17px; }
+  #title h1 { margin: 0 0 5px; font-size: 14px; letter-spacing: .16em; text-transform: uppercase; font-weight: 600; }
+  #title p { margin: 0; font-size: 11.5px; line-height: 1.55; color: #98a2b4; }
+  #title b { color: #d3dcea; font-weight: 600; }
+  #title a { color: #9cc8ff; text-decoration: none; }
+  #controls { bottom: 18px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; padding: 7px; }
+  button { font: inherit; font-size: 11.5px; letter-spacing: .05em; color: #d8e0ee; cursor: pointer;
+    background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+    padding: 9px 13px; border-radius: 9px; transition: background .18s, border-color .18s, color .18s; white-space: nowrap; }
+  button:hover { background: rgba(255,255,255,.1); }
+  button.on { background: rgba(120,190,255,.16); border-color: rgba(120,190,255,.45); color: #deefff; }
+  #label { position: absolute; padding: 5px 9px; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase;
+    background: rgba(9,11,15,.85); border: 1px solid rgba(255,255,255,.15); border-radius: 7px;
+    color: #e9eff9; opacity: 0; transition: opacity .15s; white-space: nowrap; transform: translate(-50%,-165%); }
+  #loading { position: fixed; inset: 0; display: grid; place-items: center; background: #07080b;
+    color: #8993a6; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; transition: opacity .6s; z-index: 10; }
+  #loading.done { opacity: 0; pointer-events: none; }
+  @media (max-width: 760px) {
+    #title { padding: 10px 12px; } #title h1 { font-size: 11.5px; } #title p { font-size: 9.5px; }
+    button { padding: 8px 10px; font-size: 10.5px; } #controls { gap: 4px; bottom: 12px; }
+  }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://unpkg.com/three@0.169.0/build/three.module.js",
+  "three/addons/": "https://unpkg.com/three@0.169.0/examples/jsm/" } }
+</script>
+</head>
+<body>
+<div id="loading">Loading SimReady assets</div>
+<div id="hud">
+  <div id="title" class="panel">
+    <h1>SimReady Gallery</h1>
+    <p>USD assets from <b>nvidia/simready-assets</b><br>
+       converted to glTF · <a href="index.html">storeroom scene (with the 1.58 m cart) →</a></p>
+  </div>
+  <div id="controls" class="panel">
+    <button id="spin" class="on">Auto-rotate</button>
+    <button id="wire">Wireframe</button>
+    <button id="reset">Reset view</button>
+  </div>
+  <div id="label"></div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+// name, file, angle on the ring, radial scale hint
+// angle 0 = front of the turntable (towards the camera)
+const ITEMS = [
+  { key: 'box',    file: 'box_corrugated_brown_b08.glb',  name: 'carton',     a: Math.PI,  r: 0.31 },
+  { key: 'gloves', file: 'ppe_gloves_cloth_a01.glb',      name: 'PPE gloves', a: 2.45,     r: 0.33 },
+  { key: 'cake',   file: 'food_prepared_cake_a01.glb',    name: 'cake',       a: 1.42,     r: 0.34 },
+  { key: 'pan',    file: 'kitchenware_pan_n01.glb',       name: 'frying pan', a: -1.30,    r: 0.33 },
+  { key: 'banana', file: 'food_produce_banana_m01.glb',   name: 'banana',     a: 0.52,     r: 0.34 },
+  { key: 'tomato', file: 'food_produce_tomato_a01.glb',   name: 'tomato',     a: -0.52,    r: 0.34 },
+];
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x07080b);
+scene.fog = new THREE.FogExp2(0x07080b, 0.13);
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environmentIntensity = 0.7;
+
+const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.01, 30);
+const HOME = new THREE.Vector3(0.30, 0.52, 1.05);
+const TARGET = new THREE.Vector3(0, 0.11, 0);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.copy(TARGET);
+controls.enableDamping = true;
+controls.dampingFactor = 0.07;
+controls.minDistance = 0.22;
+controls.maxDistance = 3.2;
+controls.maxPolarAngle = Math.PI * 0.495;
+
+// pedestal
+const table = new THREE.Group();
+scene.add(table);
+const disc = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.54, 0.555, 0.018, 150),
+  new THREE.MeshPhysicalMaterial({ color: 0x12151a, roughness: 0.2, metalness: 0.1, clearcoat: 1, clearcoatRoughness: 0.1 })
+);
+disc.position.y = -0.01;
+disc.receiveShadow = true;
+table.add(disc);
+const ring = new THREE.Mesh(
+  new THREE.TorusGeometry(0.54, 0.0016, 8, 180),
+  new THREE.MeshBasicMaterial({ color: 0x6fb0ff, transparent: true, opacity: 0.85 })
+);
+ring.rotation.x = Math.PI / 2;
+ring.position.y = 0.0012;
+table.add(ring);
+
+// floor
+function floorTex() {
+  const s = 1024;
+  const c = document.createElement('canvas'); c.width = c.height = s;
+  const g = c.getContext('2d');
+  g.fillStyle = '#0a0c10'; g.fillRect(0, 0, s, s);
+  const rg = g.createRadialGradient(s / 2, s / 2, s * 0.05, s / 2, s / 2, s * 0.5);
+  rg.addColorStop(0, 'rgba(74,110,168,0.26)');
+  rg.addColorStop(0.5, 'rgba(40,58,92,0.09)');
+  rg.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = rg; g.fillRect(0, 0, s, s);
+  g.strokeStyle = 'rgba(120,150,200,0.06)';
+  for (let i = 0; i <= s; i += 34) {
+    g.beginPath(); g.moveTo(i, 0); g.lineTo(i, s); g.stroke();
+    g.beginPath(); g.moveTo(0, i); g.lineTo(s, i); g.stroke();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  return t;
+}
+const floor = new THREE.Mesh(
+  new THREE.CircleGeometry(9, 96),
+  new THREE.MeshStandardMaterial({ map: floorTex(), roughness: 0.42, metalness: 0.22 })
+);
+floor.rotation.x = -Math.PI / 2;
+floor.position.y = -0.021;
+floor.receiveShadow = true;
+scene.add(floor);
+
+// lights
+scene.add(new THREE.HemisphereLight(0x8fb4ff, 0x05070a, 0.38));
+const key = new THREE.DirectionalLight(0xfff1de, 3.0);
+key.position.set(0.62, 1.05, 0.55);
+key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048);
+key.shadow.camera.left = -1.6; key.shadow.camera.right = 1.6;
+key.shadow.camera.top = 1.6; key.shadow.camera.bottom = -1.6;
+key.shadow.camera.near = 0.2; key.shadow.camera.far = 5;
+key.shadow.bias = -0.0004;
+key.shadow.normalBias = 0.0012;
+key.shadow.radius = 4;
+scene.add(key);
+const fillBlue = new THREE.DirectionalLight(0x5d9dff, 0.85);
+fillBlue.position.set(-1.6, 1.2, -1.4);
+scene.add(fillBlue);
+const rimB = new THREE.SpotLight(0xff9b6a, 4.5, 2.8, 0.78, 0.85, 1.3);
+rimB.position.set(1.1, 0.6, -0.8); rimB.target.position.set(0.1, 0.15, 0);
+scene.add(rimB, rimB.target);
+
+// load
+const loader = new GLTFLoader();
+loader.setMeshoptDecoder(MeshoptDecoder);
+const objs = [];
+const wireMats = [];
+const labelEl = document.getElementById('label');
+
+(async () => {
+  const N = ITEMS.length;
+  for (let i = 0; i < N; i++) {
+    const it = ITEMS[i];
+    const g = await loader.loadAsync('assets/' + it.file);
+    const root = g.scene;
+    root.traverse(o => {
+      if (o.isMesh) {
+        o.castShadow = o.receiveShadow = true;
+        (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => {
+          if (m) { m.envMapIntensity = 1.1; wireMats.push(m); }
+        });
+      }
+    });
+    root.position.y -= new THREE.Box3().setFromObject(root).min.y;
+    const holder = new THREE.Group();
+    holder.add(root);
+    {
+      const a = it.a, r = it.r;
+      holder.position.set(Math.sin(a) * r, 0, Math.cos(a) * r);
+      holder.rotation.y = -a + (it.key === 'pan' ? 0.5 : 0);
+      table.add(holder);
+    }
+    objs.push({ holder, name: it.name });
+  }
+  document.getElementById('loading').classList.add('done');
+  window.__ready = true;
+})();
+
+// hover
+const ray = new THREE.Raycaster();
+const ptr = new THREE.Vector2(-10, -10);
+let hov = null;
+addEventListener('pointermove', e => {
+  ptr.x = (e.clientX / innerWidth) * 2 - 1;
+  ptr.y = -(e.clientY / innerHeight) * 2 + 1;
+  labelEl.style.left = e.clientX + 'px';
+  labelEl.style.top = e.clientY + 'px';
+});
+function pick() {
+  ray.setFromCamera(ptr, camera);
+  const hits = ray.intersectObjects(objs.map(o => o.holder), true);
+  let f = null;
+  if (hits.length) {
+    let p = hits[0].object;
+    while (p && !objs.some(o => o.holder === p)) p = p.parent;
+    f = p ? objs.find(o => o.holder === p) : null;
+  }
+  if (f !== hov) {
+    hov = f;
+    labelEl.textContent = f ? f.name : '';
+    labelEl.style.opacity = f ? 1 : 0;
+  }
+}
+
+const STILL = new URLSearchParams(location.search).has('still');
+let spin = !STILL, wire = false;
+if (STILL) table.rotation.y = 0.0;
+document.getElementById('spin').classList.toggle('on', spin);
+document.getElementById('spin').onclick = e => { spin = !spin; e.currentTarget.classList.toggle('on', spin); };
+document.getElementById('wire').onclick = e => {
+  wire = !wire; e.currentTarget.classList.toggle('on', wire);
+  wireMats.forEach(m => m.wireframe = wire);
+};
+document.getElementById('reset').onclick = () => {
+  camera.position.copy(HOME); controls.target.copy(TARGET); controls.update(); table.rotation.y = 0;
+};
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+const clock = new THREE.Clock();
+function tick() {
+  const dt = Math.min(clock.getDelta(), 0.05);
+  if (spin) table.rotation.y += dt * 0.20;
+  pick();
+  controls.update();
+  renderer.render(scene, camera);
+  requestAnimationFrame(tick);
+}
+
+camera.position.set(1.9, 1.35, 2.2);
+let intro = 0;
+const from = camera.position.clone();
+controls.enabled = false;
+function introTick() {
+  intro = Math.min(1, intro + 0.014);
+  const t = 1 - Math.pow(1 - intro, 3);
+  camera.position.lerpVectors(from, HOME, t);
+  camera.lookAt(TARGET);
+  if (intro < 1) requestAnimationFrame(introTick);
+  else { controls.enabled = true; controls.update(); }
+}
+introTick();
+tick();
+</script>
+</body>
+</html>
