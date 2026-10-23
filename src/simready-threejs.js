@@ -38,13 +38,13 @@ export const MANIFEST_URL = CDN_BASE + 'manifest.json';
  * Regenerate from manifest.json via `node tools/sync-manifest.mjs`.
  */
 export const ASSETS = {
-  'cart_mobile_e01': { name: 'mobile cart', sortOrder: 0, size: { x: 0.401, y: 1.579, z: 0.838 }, triangles: 298146, bytes: 1187792 },
-  'box_corrugated_brown_b08': { name: 'corrugated carton', sortOrder: 1, size: { x: 0.297, y: 0.304, z: 0.304 }, triangles: 15999, bytes: 376024 },
-  'kitchenware_pan_n01': { name: 'frying pan', sortOrder: 2, size: { x: 0.204, y: 0.053, z: 0.36 }, triangles: 15392, bytes: 175220 },
-  'food_prepared_cake_a01': { name: 'cake slice', sortOrder: 3, size: { x: 0.086, y: 0.07, z: 0.104 }, triangles: 6990, bytes: 216004 },
-  'food_produce_banana_m01': { name: 'banana', sortOrder: 4, size: { x: 0.09, y: 0.028, z: 0.148 }, triangles: 7148, bytes: 91556 },
-  'food_produce_tomato_a01': { name: 'tomato', sortOrder: 5, size: { x: 0.065, y: 0.057, z: 0.062 }, triangles: 9996, bytes: 87700 },
-  'ppe_gloves_cloth_a01': { name: 'PPE gloves', sortOrder: 6, size: { x: 0.233, y: 0.053, z: 0.252 }, triangles: 202266, bytes: 1329376 },
+  'cart_mobile_e01': { name: 'mobile cart', sortOrder: 0, size: { x: 0.401, y: 1.579, z: 0.838 }, triangles: 298146, bytes: 1186164 },
+  'box_corrugated_brown_b08': { name: 'corrugated carton', sortOrder: 1, size: { x: 0.297, y: 0.304, z: 0.304 }, triangles: 15999, bytes: 374616 },
+  'kitchenware_pan_n01': { name: 'frying pan', sortOrder: 2, size: { x: 0.204, y: 0.053, z: 0.36 }, triangles: 15392, bytes: 175180 },
+  'food_prepared_cake_a01': { name: 'cake slice', sortOrder: 3, size: { x: 0.086, y: 0.07, z: 0.104 }, triangles: 6990, bytes: 215964 },
+  'food_produce_banana_m01': { name: 'banana', sortOrder: 4, size: { x: 0.09, y: 0.028, z: 0.148 }, triangles: 7148, bytes: 91512 },
+  'food_produce_tomato_a01': { name: 'tomato', sortOrder: 5, size: { x: 0.065, y: 0.057, z: 0.062 }, triangles: 9996, bytes: 87660 },
+  'ppe_gloves_cloth_a01': { name: 'PPE gloves', sortOrder: 6, size: { x: 0.233, y: 0.053, z: 0.252 }, triangles: 202266, bytes: 1329336 },
 };
 
 /**

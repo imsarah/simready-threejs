@@ -77,19 +77,18 @@ def tex_path(sh, names, base_dir):
     return None
 
 def scalar(sh, name, default):
+    """Factor for a UsdPreviewSurface input, as glTF expects it.
+
+    glTF multiplies metallicFactor/roughnessFactor with the metallicRoughness
+    texture, so a texture-driven input must yield 1.0. Reading the connected
+    node's `fallback` here would be wrong: it describes the texture, not the
+    multiplier, and a 0.0 fallback erases the metal channel entirely.
+    """
     inp = sh.GetInput(name)
     if not inp:
         return default
-    srcs = inp.GetConnectedSources()[0]
-    if srcs:
-        node = srcs[0].source.GetPrim()
-        if node.GetTypeName() == 'Shader':
-            s = UsdShade.Shader(node)
-            for k in ('value', 'fallback'):
-                v = s.GetInput(k)
-                if v and v.Get() is not None and not hasattr(v.Get(), '__len__'):
-                    return float(v.Get())
-        return default
+    if inp.GetConnectedSources()[0]:
+        return 1.0
     v = inp.Get()
     return float(v) if v is not None and not hasattr(v, '__len__') else default
 
@@ -180,6 +179,11 @@ def extract_mesh(prim, M, zup, mpu):
     corners = tri.reshape(-1)
     N = Nloop[cl] if Nloop is not None else None
     UV = UVloop[cl] if UVloop is not None else None
+    if UV is not None:
+        # USD texture coordinates have (0,0) at the lower-left of the image;
+        # glTF/three.js sample with (0,0) at the upper-left. Without this flip,
+        # atlased assets (e.g. the pan) map onto the wrong islands entirely.
+        UV = np.column_stack([UV[:, 0], 1.0 - UV[:, 1]])
     P = V[corners]
     # Z-up -> Y-up (x, z, -y); apply prim world transform in USD space first
     Mm = np.array(M, dtype=np.float64).T

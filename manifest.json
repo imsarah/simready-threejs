@@ -11,13 +11,13 @@
   },
   "license": "CC-BY-4.0 (assets) / MIT (code)",
   "attribution": "3D assets by NVIDIA, from nvidia/simready-assets, licensed CC BY 4.0.",
-  "totalBytes": 3463672,
+  "totalBytes": 3460432,
   "totalTriangles": 555937,
   "assets": {
     "cart_mobile_e01": {
       "name": "mobile cart",
       "file": "assets/cart_mobile_e01.glb",
-      "bytes": 1187792,
+      "bytes": 1186164,
       "triangles": 298146,
       "vertices": 894438,
       "meshes": 9,
@@ -33,7 +33,7 @@
     "box_corrugated_brown_b08": {
       "name": "corrugated carton",
       "file": "assets/box_corrugated_brown_b08.glb",
-      "bytes": 376024,
+      "bytes": 374616,
       "triangles": 15999,
       "vertices": 47997,
       "meshes": 1,
@@ -49,7 +49,7 @@
     "kitchenware_pan_n01": {
       "name": "frying pan",
       "file": "assets/kitchenware_pan_n01.glb",
-      "bytes": 175220,
+      "bytes": 175180,
       "triangles": 15392,
       "vertices": 46176,
       "meshes": 1,
@@ -65,7 +65,7 @@
     "food_prepared_cake_a01": {
       "name": "cake slice",
       "file": "assets/food_prepared_cake_a01.glb",
-      "bytes": 216004,
+      "bytes": 215964,
       "triangles": 6990,
       "vertices": 20970,
       "meshes": 1,
@@ -81,7 +81,7 @@
     "food_produce_banana_m01": {
       "name": "banana",
       "file": "assets/food_produce_banana_m01.glb",
-      "bytes": 91556,
+      "bytes": 91512,
       "triangles": 7148,
       "vertices": 21444,
       "meshes": 1,
@@ -97,7 +97,7 @@
     "food_produce_tomato_a01": {
       "name": "tomato",
       "file": "assets/food_produce_tomato_a01.glb",
-      "bytes": 87700,
+      "bytes": 87660,
       "triangles": 9996,
       "vertices": 29988,
       "meshes": 1,
@@ -113,7 +113,7 @@
     "ppe_gloves_cloth_a01": {
       "name": "PPE gloves",
       "file": "assets/ppe_gloves_cloth_a01.glb",
-      "bytes": 1329376,
+      "bytes": 1329336,
       "triangles": 202266,
       "vertices": 606798,
       "meshes": 2,

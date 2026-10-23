@@ -1,0 +1,109 @@
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.169.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.169.0/examples/jsm/" } }</script>
+<style>html,body{margin:0;height:100%;background:#12141a;overflow:hidden}
+#hud{position:fixed;left:10px;top:8px;color:#8fa;font:11px ui-monospace,monospace;z-index:5}</style></head><body>
+<div id="hud"></div>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const q = new URLSearchParams(location.search);
+const file = q.get('f');
+const mode = q.get('m') || 'tex';   // tex | checker | uvonly
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(1); renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x12141a);
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environmentIntensity = 1.0;
+scene.add(new THREE.HemisphereLight(0xffffff, 0x222630, 1.2));
+const d1 = new THREE.DirectionalLight(0xffffff, 2.2); d1.position.set(1.4, 2.0, 1.6); scene.add(d1);
+const d2 = new THREE.DirectionalLight(0xbfd4ff, 0.9); d2.position.set(-1.6, 1.0, -1.2); scene.add(d2);
+
+// UV checker: distinct cell + tiny grid so distortion / flipping is obvious
+function checkerTexture() {
+  const s = 1024, n = 8, c = document.createElement('canvas');
+  c.width = c.height = s;
+  const g = c.getContext('2d');
+  const cell = s / n;
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    g.fillStyle = (x + y) % 2 ? '#e8eef7' : '#2b3340';
+    g.fillRect(x * cell, y * cell, cell, cell);
+    g.strokeStyle = 'rgba(255,80,120,.55)'; g.lineWidth = 2;
+    g.strokeRect(x * cell, y * cell, cell, cell);
+  }
+  g.fillStyle = '#ff4d6d'; g.font = 'bold 26px monospace';
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++)
+    g.fillText(`${x},${y}`, x * cell + 8, y * cell + 30);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  return t;
+}
+const checker = checkerTexture();
+
+const loader = new GLTFLoader();
+loader.setMeshoptDecoder(MeshoptDecoder);
+loader.load('../assets/' + file + '.glb', (g) => {
+  const root = g.scene;
+  const stats = [];
+  root.traverse((o) => {
+    if (!o.isMesh) return;
+    const geo = o.geometry;
+    const uv = geo.attributes.uv;
+    let msg = `${o.name} uv=${uv ? uv.count : 'none'}`;
+    if (uv) {
+      let minU = 1e9, maxU = -1e9, minV = 1e9, maxV = -1e9, nan = 0;
+      for (let i = 0; i < uv.count; i++) {
+        const u = uv.getX(i), v = uv.getY(i);
+        if (!Number.isFinite(u) || !Number.isFinite(v)) { nan++; continue; }
+        minU = Math.min(minU, u); maxU = Math.max(maxU, u);
+        minV = Math.min(minV, v); maxV = Math.max(maxV, v);
+      }
+      msg += ` u[${minU.toFixed(2)},${maxU.toFixed(2)}] v[${minV.toFixed(2)},${maxV.toFixed(2)}] nan=${nan}`;
+      if (mode === 'uvflip') {
+        // flip V at the geometry level (map.flipY is ignored by GLTFLoader materials)
+        const uv = geo.attributes.uv;
+        for (let i = 0; i < uv.count; i++) uv.setY(i, 1 - uv.getY(i));
+        uv.needsUpdate = true;
+        o.material = new THREE.MeshBasicMaterial({ map: o.material.map });
+      } else if (mode === 'basicflip') {
+        const map = o.material.map; map.flipY = true; map.needsUpdate = true;
+        o.material = new THREE.MeshBasicMaterial({ map, color: 0xffffff });
+      } else if (mode === 'basic') {
+        // unlit albedo: shows the mapping itself, with no lighting/metal in the way
+        const map = o.material.map;
+        o.material = new THREE.MeshBasicMaterial({ map, color: 0xffffff });
+      } else if (mode === 'checker' || mode === 'uvonly') {
+        const hadMap = o.material.map;
+        o.material = new THREE.MeshBasicMaterial({ map: checker, wireframe: false, side: THREE.DoubleSide, color: 0xffffff });
+        if (mode === 'uvonly') o.material.map = null, o.material.color.set(0x888888);
+      }
+    }
+    stats.push(msg);
+  });
+  document.getElementById('hud').textContent = file + ' | ' + mode;
+  console.log('STATS ' + JSON.stringify(stats));
+
+  scene.add(root);
+  const box = new THREE.Box3().setFromObject(root);
+  const size = box.getSize(new THREE.Vector3()), c = box.getCenter(new THREE.Vector3());
+  root.position.sub(c);
+  const r = Math.max(size.x, size.y, size.z);
+  const cam = new THREE.PerspectiveCamera(30, innerWidth / innerHeight, r * 0.01, r * 40);
+  cam.position.set(r * 1.15, r * 0.75, r * 1.5);
+  cam.lookAt(0, 0, 0);
+  renderer.render(scene, cam);
+  window.__ready = true;
+  (function t() { requestAnimationFrame(t); renderer.render(scene, cam); })();
+});
+</script></body></html>

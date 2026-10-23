@@ -79,6 +79,13 @@ things that break naive conversion of SimReady USD:
    attributes, or textures come out scrambled.
 3. **Texture paths resolve per authoring layer** — relative to
    `payloads/materials.usda`, not the entry stage.
+4. **V is inverted relative to glTF.** USD puts (0,0) at the lower-left of the
+   image, glTF/three.js at the upper-left, so `v -> 1 - v` on export. Skip it and
+   tiling textures still look fine (which hides the bug) while any atlased asset —
+   the frying pan, for instance — samples the wrong islands entirely.
+5. **Metallic/roughness must be factors of 1.0 when texture-driven.** glTF
+   multiplies the factor with the ORM texture; exporting `metallicFactor: 0`
+   (the UsdPreviewSurface fallback) silently deletes every metal surface.
 
 ```bash
 python3 -m pip install usd-core numpy pygltflib pillow
@@ -94,6 +101,9 @@ npx @gltf-transform/cli optimize out.glb assets/x.glb \
 **Verified.** Eight assets converted correctly; one (eyeglasses, 82 MB of USD →
 384 KB) was checked blind against published ground truth and matched exactly —
 4 meshes, 42,168 triangles, 0.145 × 0.174 × 0.057 m.
+
+Every shipped asset has also been rendered and eyeballed for UV and material
+correctness — which is how the two bugs in items 4 and 5 above were found.
 
 **Limitations — read before relying on it:**
 
@@ -118,6 +128,7 @@ src/simready-threejs.js the ESM module
 manifest.json           catalogue: sizes, triangles, source links, licence
 assets/*.glb            the converted assets
 tools/                  fetch → convert → compress pipeline
+tools/qa.html           dev: per-asset render QA (textured / unlit / UV checker / UV flip)
 ```
 
 ## Run locally
