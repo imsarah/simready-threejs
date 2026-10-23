@@ -51,6 +51,47 @@ gh api -X POST /repos/<owner>/<repo>/pages -f "source[branch]=main" -f "source[p
 `vercel.json` is included if you prefer Vercel (`vercel deploy`); it only adds
 long-lived cache headers for `assets/`.
 
+## Is this good enough for my project?
+
+It depends what you need it for. Honest scope:
+
+**Verified working.** Eight assets converted with geometry, UVs, albedo/normal/ORM
+textures and correct metre scale. One of them was checked against published
+ground truth: `accessory_eyeglasses_a01` should be 4 meshes / 42,168 triangles /
+0.145 x 0.174 x 0.057 m — this converter produces 4 meshes / 42,168 triangles /
+0.145 x 0.174 x 0.057 m. (Blender's stock exporter needs two corrections on that
+same asset or it emits exactly double the triangles, with doubled arms.)
+
+**What it handles.** Layered USD with `payloads/`, native-instance prototypes,
+per-layer texture paths, indexed `primvars:st`, Z-up to Y-up, and memory-safe
+texture downscaling. Source folders are large — the eyeglasses are 82 MB in USD
+and come out at 384 KB after meshopt + WebP.
+
+**What it does not handle — check before you rely on it:**
+
+* **UsdPreviewSurface only.** Assets authored with MDL-only materials will give
+  you geometry with wrong or missing textures. Failures here are *silent*, not
+  errors — always eyeball the output.
+* **Variants.** The default variant is taken. SimReady ships physics variants
+  (rigid/deformable) and sometimes visual variants; there is no `--variant` flag.
+* **One entry stage per folder.** It picks the first `*.usd` in
+  `simready_usd/`. Assets with several entry stages need the path passed explicitly.
+* **Props, not scenes.** Tested on single assets (food, kitchenware, a cart,
+  PPE, eyewear) up to 459 K triangles. Assembly-level USD with nested instances
+  or `references` to other asset folders is untested.
+* **No physics.** Colliders, mass, and articulation live in the SimReady physics
+  layers and are not exported — this is render geometry for the web.
+* **WebP textures** (from the `gltf-transform` step). Great for three.js and any
+  browser; Unity, Godot, and native engines want `--texture-compress false` or PNG.
+* **No decimation.** Triangle counts match the source. Add
+  `--simplify`/`simplify()` from gltf-transform if you need lighter meshes.
+
+**Verdict:** for a three.js developer wanting SimReady *props* in a web scene,
+this saves the several hours it takes to discover the four traps above. For
+anything with MDL-only materials, variant selection, or full assemblies, treat it
+as a starting point you will have to extend — and verify the output rather than
+trusting it.
+
 ## Run locally
 
 Any static server works — ES modules and `.glb` fetches need HTTP, not `file://`.
